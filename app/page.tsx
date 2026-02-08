@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { TaskList } from '@/components/TaskList';
 import { ChatPanel } from '@/components/ChatPanel';
+import { TaskDetail } from '@/components/TaskDetail';
 import type { Task } from '@/lib/db/schema';
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentUserId, setCurrentUserId] = useState('sarah');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Fetch tasks on mount and when user changes
   useEffect(() => {
@@ -17,9 +19,8 @@ export default function Home() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch(
-        `/api/tasks?userId=${currentUserId}&view=my-tasks`,
-      );
+      // Fetch all tasks for user (both assigned and requested)
+      const response = await fetch(`/api/tasks?userId=${currentUserId}`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
       setTasks(data);
@@ -79,8 +80,8 @@ export default function Home() {
   };
 
   const handleSelectTask = (taskId: string) => {
-    // TODO: Open task detail view
-    console.log('Selected task:', taskId);
+    const task = tasks.find(t => t.id === taskId);
+    setSelectedTask(task || null);
   };
 
   if (isLoading) {
@@ -110,15 +111,23 @@ export default function Home() {
       <div className='w-1/2 border-r border-gray-200'>
         <TaskList
           tasks={tasks}
+          currentUserId={currentUserId}
           onCompleteTask={handleCompleteTask}
           onCancelTask={handleCancelTask}
           onSelectTask={handleSelectTask}
         />
       </div>
 
-      {/* Right Panel - Chat */}
+      {/* Right Panel - Chat or Task Detail */}
       <div className='w-1/2'>
-        <ChatPanel onCreateTask={handleCreateTask} />
+        {selectedTask ? (
+          <TaskDetail
+            task={selectedTask}
+            onBack={() => setSelectedTask(null)}
+          />
+        ) : (
+          <ChatPanel onCreateTask={handleCreateTask} />
+        )}
       </div>
     </div>
   );

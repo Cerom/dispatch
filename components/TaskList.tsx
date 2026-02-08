@@ -6,6 +6,7 @@ import { TaskCard } from './TaskCard';
 
 interface TaskListProps {
   tasks: Task[];
+  currentUserId: string;
   onCompleteTask: (taskId: string) => void;
   onCancelTask: (taskId: string) => void;
   onSelectTask: (taskId: string) => void;
@@ -13,15 +14,15 @@ interface TaskListProps {
 
 type TabType = 'todo' | 'sent' | 'done';
 
-export function TaskList({ tasks, onCompleteTask, onCancelTask, onSelectTask }: TaskListProps) {
+export function TaskList({ tasks, currentUserId, onCompleteTask, onCancelTask, onSelectTask }: TaskListProps) {
   const [activeTab, setActiveTab] = useState<TabType>('todo');
 
   const filteredTasks = tasks.filter(task => {
     if (activeTab === 'todo') {
-      return task.status === 'assigned' || task.status === 'in_progress';
+      return task.assigneeId === currentUserId && (task.status === 'assigned' || task.status === 'in_progress');
     }
     if (activeTab === 'sent') {
-      return true; // Show all tasks user requested (filter by requesterId in parent)
+      return task.requesterId === currentUserId && task.status !== 'completed';
     }
     if (activeTab === 'done') {
       return task.status === 'completed';
