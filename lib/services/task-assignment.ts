@@ -8,29 +8,76 @@ interface TaskRequirements {
   priority: string;
 }
 
-export async function findBestAssignee(task: TaskRequirements): Promise<User | null> {
-  const allUsers = await db.select().from(users);
-  const availableUsers = allUsers.filter(user => user.currentCapacity < user.maxCapacity);
-
-  if (availableUsers.length === 0) return null;
-
-  const usersWithScores = availableUsers.map(user => {
-    const matchingSkills = task.requiredSkills.filter(skill => user.skills.includes(skill));
-    const skillMatchPercentage = task.requiredSkills.length > 0
-      ? Math.round((matchingSkills.length / task.requiredSkills.length) * 100)
-      : 100;
-
-    const availableCapacity = user.maxCapacity - user.currentCapacity;
-    const capacityPercentage = Math.round((availableCapacity / user.maxCapacity) * 100);
-
-    return { user, skillMatchPercentage, availableCapacity, capacityPercentage };
+export async function findBestAssignee(
+  task: TaskRequirements,
+): Promise<User | null> {
+  console.log('[findBestAssignee] Starting assignment search', {
+    requiredSkills: task.requiredSkills,
+    priority: task.priority,
   });
 
-  const matchedUsers = task.requiredSkills.length > 0
-    ? usersWithScores.filter(u => u.skillMatchPercentage > 0)
-    : usersWithScores;
+  const allUsers = await db.select().from(users);
+  console.log(`[findBestAssignee] Fetched ${allUsers.length} total users`);
 
-  if (matchedUsers.length === 0) return null;
+  let availableUsers = allUsers.filter(
+    (user) => user.currentCapacity < user.maxCapacity,
+  );
+  console.log(
+    `[findBestAssignee] ${availableUsers.length}/${allUsers.length} users have available capacity`,
+  );
+
+  // Fallback: if no one has capacity, pick user with least workload
+  if (availableUsers.length === 0) {
+    console.warn('[findBestAssignee] No users with available capacity — assigning to least busy user');
+    const sortedByWorkload = [...allUsers].sort(
+      (a, b) => a.currentCapacity - b.currentCapacity
+    );
+    availableUsers = [sortedByWorkload[0]];
+  }
+
+  const usersWithScores = availableUsers.map((user) => {
+    const matchingSkills = task.requiredSkills.filter((skill) =>
+      user.skills.includes(skill),
+    );
+    const skillMatchPercentage =
+      task.requiredSkills.length > 0
+        ? Math.round((matchingSkills.length / task.requiredSkills.length) * 100)
+        : 100;
+
+    const availableCapacity = user.maxCapacity - user.currentCapacity;
+    const capacityPercentage = Math.round(
+      (availableCapacity / user.maxCapacity) * 100,
+    );
+
+    console.log(`[findBestAssignee] Scored user "${user.name}"`, {
+      matchingSkills,
+      skillMatchPercentage,
+      availableCapacity,
+      capacityPercentage,
+    });
+
+    return {
+      user,
+      skillMatchPercentage,
+      availableCapacity,
+      capacityPercentage,
+    };
+  });
+
+  let matchedUsers =
+    task.requiredSkills.length > 0
+      ? usersWithScores.filter((u) => u.skillMatchPercentage > 0)
+      : usersWithScores;
+
+  console.log(
+    `[findBestAssignee] ${matchedUsers.length} users matched after skill filtering`,
+  );
+
+  // Fallback: if no skill match, assign to user with most capacity
+  if (matchedUsers.length === 0) {
+    console.warn('[findBestAssignee] No skill match found — falling back to capacity-based assignment');
+    matchedUsers = usersWithScores;
+  }
 
   matchedUsers.sort((a, b) => {
     if (b.availableCapacity !== a.availableCapacity) {
@@ -39,39 +86,72 @@ export async function findBestAssignee(task: TaskRequirements): Promise<User | n
     return b.skillMatchPercentage - a.skillMatchPercentage;
   });
 
-  return matchedUsers[0].user;
+  const best = matchedUsers[0];
+  console.log(`[findBestAssignee] Best assignee: "${best.user.name}"`, {
+    skillMatch: best.skillMatchPercentage,
+    capacity: best.availableCapacity,
+  });
+
+  return best.user;
 }
 
-export async function getAssignmentInfo(userId: string, task: TaskRequirements) {
-  const user = await db.select().from(users).where(sql`${users.id} = ${userId}`).limit(1);
-  if (!user[0]) throw new Error(`User ${userId} not found`);
+export async function getAssignmentInfo(
+  userId: string,
+  task: TaskRequirements,
+) {
+  console.log('[getAssignmentInfo] Fetching info for user', { userId, task });
+
+  const user = await db
+    .select()
+    .from(users)
+    .where(sql`${users.id} = ${userId}`)
+    .limit(1);
+
+  if (!user[0]) {
+    console.error(`[getAssignmentInfo] User ${userId} not found`);
+    throw new Error(`User ${userId} not found`);
+  }
 
   const u = user[0];
-  const matchingSkills = task.requiredSkills.filter(skill => u.skills.includes(skill));
-  const skillMatchPercentage = task.requiredSkills.length > 0
-    ? Math.round((matchingSkills.length / task.requiredSkills.length) * 100)
-    : 100;
+  const matchingSkills = task.requiredSkills.filter((skill) =>
+    u.skills.includes(skill),
+  );
+  const skillMatchPercentage =
+    task.requiredSkills.length > 0
+      ? Math.round((matchingSkills.length / task.requiredSkills.length) * 100)
+      : 100;
 
   const availableCapacity = u.maxCapacity - u.currentCapacity;
-  const capacityPercentage = Math.round((availableCapacity / u.maxCapacity) * 100);
+  const capacityPercentage = Math.round(
+    (availableCapacity / u.maxCapacity) * 100,
+  );
 
-  return {
+  const info = {
     userId: u.id,
     name: u.name,
     role: u.role || '',
     skillMatch: skillMatchPercentage,
-    capacity: capacityPercentage
+    capacity: capacityPercentage,
   };
+
+  console.log('[getAssignmentInfo] Result', info);
+  return info;
 }
 
 export async function incrementUserCapacity(userId: string) {
-  await db.update(users)
+  console.log(`[incrementUserCapacity] Incrementing capacity for user ${userId}`);
+  await db
+    .update(users)
     .set({ currentCapacity: sql`${users.currentCapacity} + 1` })
     .where(sql`${users.id} = ${userId}`);
+  console.log(`[incrementUserCapacity] Done for user ${userId}`);
 }
 
 export async function decrementUserCapacity(userId: string) {
-  await db.update(users)
+  console.log(`[decrementUserCapacity] Decrementing capacity for user ${userId}`);
+  await db
+    .update(users)
     .set({ currentCapacity: sql`GREATEST(0, ${users.currentCapacity} - 1)` })
     .where(sql`${users.id} = ${userId}`);
+  console.log(`[decrementUserCapacity] Done for user ${userId}`);
 }

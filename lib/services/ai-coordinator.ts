@@ -71,12 +71,15 @@ function parseDeadline(input: string): Date {
   return new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 }
 
-export async function coordinateTask(message: string, userId: string): Promise<CoordinatorResponse> {
+export async function coordinateTask(
+  message: string,
+  userId: string,
+): Promise<CoordinatorResponse> {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 2000,
     system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: message }]
+    messages: [{ role: 'user', content: message }],
   });
 
   const content = response.content[0];
@@ -97,36 +100,39 @@ export async function coordinateTask(message: string, userId: string): Promise<C
       const resultResponse = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        messages: [{ role: 'user', content: message }]
+        messages: [{ role: 'user', content: message }],
       });
       const resultContent = resultResponse.content[0];
-      result = resultContent.type === 'text' ? resultContent.text : 'Task completed';
+      result =
+        resultContent.type === 'text' ? resultContent.text : 'Task completed';
     }
 
     return {
       executionTier: 'ai_direct',
       reasoning: "This doesn't require a human. Working on it...",
       task: parsed.task,
-      result
+      result,
     };
   }
 
   const assignee = await findBestAssignee({
     requiredSkills: parsed.task.requiredSkills || [],
-    priority: parsed.task.priority || 'medium'
+    priority: parsed.task.priority || 'medium',
   });
+
+  console.log({ assignee });
 
   if (!assignee) throw new Error('No available users');
 
   const assignmentInfo = await getAssignmentInfo(assignee.id, {
     requiredSkills: parsed.task.requiredSkills || [],
-    priority: parsed.task.priority || 'medium'
+    priority: parsed.task.priority || 'medium',
   });
 
   return {
     executionTier: 'human',
     reasoning: `Assigning to ${assignee.name} (${assignee.role}, ${assignmentInfo.skillMatch}% skill match, ${assignmentInfo.capacity}% capacity). ${assignee.name} won't know it's from you — keeping it anonymous to remove bias.`,
     task: parsed.task,
-    assignedTo: assignmentInfo
+    assignedTo: assignmentInfo,
   };
 }

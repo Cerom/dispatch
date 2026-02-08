@@ -17,7 +17,7 @@ async function seed() {
       name: 'Sarah Chen',
       email: 'sarah@dispatch.ai',
       role: 'Engineer',
-      skills: ['code', 'typescript', 'react', 'api-design', 'testing'],
+      skills: ['code', 'typescript', 'react', 'api-design', 'testing', 'documentation', 'debugging', 'architecture', 'review', 'automation', 'devops', 'general'],
       currentCapacity: 0,
       maxCapacity: 5
     },
@@ -26,7 +26,7 @@ async function seed() {
       name: 'Jordan Rivers',
       email: 'jordan@dispatch.ai',
       role: 'Data Analyst',
-      skills: ['data', 'analysis', 'sql', 'spreadsheets', 'visualization', 'python'],
+      skills: ['data', 'analysis', 'sql', 'spreadsheets', 'visualization', 'python', 'reporting', 'metrics', 'dashboards', 'research', 'presentation', 'slides', 'general'],
       currentCapacity: 1,
       maxCapacity: 5
     },
@@ -35,7 +35,7 @@ async function seed() {
       name: 'Alex Park',
       email: 'alex@dispatch.ai',
       role: 'PM',
-      skills: ['planning', 'writing', 'analysis', 'spreadsheets', 'user-research', 'roadmapping'],
+      skills: ['planning', 'writing', 'analysis', 'spreadsheets', 'user-research', 'roadmapping', 'communication', 'documentation', 'presentation', 'slides', 'coordination', 'scheduling', 'general'],
       currentCapacity: 0,
       maxCapacity: 5
     }

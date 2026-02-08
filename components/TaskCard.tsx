@@ -1,7 +1,6 @@
 'use client';
 
 import { Task } from '@/lib/db/schema';
-import { CalendarDays, X, Check } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
@@ -44,7 +43,7 @@ export function TaskCard({ task, hasNotification, onComplete, onCancel, onClick 
 
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-full">
-          <CalendarDays className="w-3.5 h-3.5" />
+          <span className="material-symbols-outlined text-sm">calendar_today</span>
           <span>{formatDeadline(task.deadline)}</span>
         </div>
 
@@ -59,7 +58,7 @@ export function TaskCard({ task, hasNotification, onComplete, onCancel, onClick 
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="Can't do"
               >
-                <X className="w-5 h-5 text-gray-700" />
+                <span className="material-symbols-outlined text-xl">close</span>
               </button>
             )}
             {onComplete && (
@@ -71,7 +70,7 @@ export function TaskCard({ task, hasNotification, onComplete, onCancel, onClick 
                 className="p-2 bg-green-100 hover:bg-green-200 rounded-full transition-colors"
                 aria-label="Complete"
               >
-                <Check className="w-5 h-5 text-green-700" />
+                <span className="material-symbols-outlined text-xl text-green-700">check</span>
               </button>
             )}
           </div>

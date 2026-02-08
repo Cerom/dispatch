@@ -33,20 +33,33 @@ export function TaskList({ tasks, onCompleteTask, onCancelTask, onSelectTask }: 
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header with tabs */}
       <div className="p-6 pb-4">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">todo</h1>
+        <div className="flex items-baseline gap-4 h-10">
+          <button
+            onClick={() => setActiveTab('todo')}
+            className={`transition-all ${
+              activeTab === 'todo'
+                ? 'text-3xl font-bold text-gray-900'
+                : 'text-lg text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            todo
+          </button>
           <button
             onClick={() => setActiveTab('sent')}
-            className={`text-lg ${
-              activeTab === 'sent' ? 'text-gray-900 font-medium' : 'text-gray-400'
+            className={`transition-all ${
+              activeTab === 'sent'
+                ? 'text-3xl font-bold text-gray-900'
+                : 'text-lg text-gray-400 hover:text-gray-600'
             }`}
           >
             sent
           </button>
           <button
             onClick={() => setActiveTab('done')}
-            className={`text-lg ${
-              activeTab === 'done' ? 'text-gray-900 font-medium' : 'text-gray-400'
+            className={`transition-all ${
+              activeTab === 'done'
+                ? 'text-3xl font-bold text-gray-900'
+                : 'text-lg text-gray-400 hover:text-gray-600'
             }`}
           >
             done
